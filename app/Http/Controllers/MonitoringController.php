@@ -7,6 +7,7 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryGroup;
 use App\Models\Project;
 use App\Models\Training;
+use App\Support\PermissionChecker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -19,11 +20,11 @@ class MonitoringController extends Controller
         $search = $request->get('search', '');
 
         $access = [
-            'beneficiaries' => $user->can('beneficiaries.view') || $user->can('beneficiaries.manage'),
-            'projects' => $user->can('projects.view') || $user->can('projects.manage'),
-            'trainings' => $user->can('trainings.view') || $user->can('trainings.manage'),
-            'assistance' => $user->can('assistance.view') || $user->can('assistance.manage'),
-            'groups' => $user->can('groups.view') || $user->can('groups.manage'),
+            'beneficiaries' => PermissionChecker::allows($user, 'beneficiaries.view', 'beneficiaries.manage'),
+            'projects' => PermissionChecker::allows($user, 'projects.view', 'projects.manage'),
+            'trainings' => PermissionChecker::allows($user, 'trainings.view', 'trainings.manage'),
+            'assistance' => PermissionChecker::allows($user, 'assistance.view', 'assistance.manage'),
+            'groups' => PermissionChecker::allows($user, 'groups.view', 'groups.manage'),
         ];
 
         if (! $access[$tab] ?? false) {

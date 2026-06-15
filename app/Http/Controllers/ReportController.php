@@ -14,27 +14,31 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryGroup;
 use App\Models\Project;
 use App\Models\Training;
+use App\Support\PermissionChecker;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
     public function index(Request $request)
     {
-        $modelTypes = AuditLog::select('model_type')->distinct()->pluck('model_type');
+        $modelTypes = Schema::hasTable('audit_logs')
+            ? AuditLog::query()->select('model_type')->distinct()->orderBy('model_type')->pluck('model_type')
+            : collect();
 
         return inertia('reports.index', [
             'projects' => Project::select('id', 'project_name')->orderBy('project_name')->get(),
             'modelTypes' => $modelTypes,
-            'canViewAuditLogs' => $request->user()?->can('audit_logs.view') ?? false,
+            'canViewAuditLogs' => PermissionChecker::allows($request->user(), 'audit_logs.view'),
             'counts' => [
                 'beneficiaries' => Beneficiary::count(),
                 'projects' => Project::count(),
                 'trainings' => Training::count(),
                 'assistance' => AssistanceRecord::count(),
                 'groups' => BeneficiaryGroup::count(),
-                'audit_logs' => AuditLog::count(),
+                'audit_logs' => Schema::hasTable('audit_logs') ? AuditLog::count() : 0,
             ],
         ]);
     }
@@ -275,7 +279,7 @@ class ReportController extends Controller
 
     private function authorizeAuditLogs(Request $request): void
     {
-        abort_unless($request->user()?->can('audit_logs.view'), 403);
+        abort_unless(PermissionChecker::allows($request->user(), 'audit_logs.view'), 403);
     }
 
     /* ─── Helpers ────────────────────────────────────────────── */
