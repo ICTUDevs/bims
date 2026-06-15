@@ -8,6 +8,7 @@ use App\Http\Controllers\BeneficiaryController;
 use App\Http\Controllers\BeneficiaryGroupController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FamilyMemberController;
+use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
@@ -31,9 +32,11 @@ Route::middleware([
 ])->group(function () {
     Route::middleware(['permission:dashboard.access'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
     });
 
     Route::middleware(['permission:reports.export'])->group(function () {
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('reports/beneficiaries/pdf', [ReportController::class, 'beneficiariesPdf'])->name('reports.beneficiaries.pdf');
         Route::get('reports/beneficiaries/excel', [ReportController::class, 'beneficiariesExcel'])->name('reports.beneficiaries.excel');
         Route::get('reports/projects/pdf', [ReportController::class, 'projectsPdf'])->name('reports.projects.pdf');
@@ -42,6 +45,10 @@ Route::middleware([
         Route::get('reports/trainings/excel', [ReportController::class, 'trainingsExcel'])->name('reports.trainings.excel');
         Route::get('reports/assistance/pdf', [ReportController::class, 'assistancePdf'])->name('reports.assistance.pdf');
         Route::get('reports/assistance/excel', [ReportController::class, 'assistanceExcel'])->name('reports.assistance.excel');
+        Route::get('reports/groups/pdf', [ReportController::class, 'groupsPdf'])->name('reports.groups.pdf');
+        Route::get('reports/groups/excel', [ReportController::class, 'groupsExcel'])->name('reports.groups.excel');
+        Route::get('reports/audit-logs/pdf', [ReportController::class, 'auditLogsPdf'])->name('reports.audit-logs.pdf');
+        Route::get('reports/audit-logs/excel', [ReportController::class, 'auditLogsExcel'])->name('reports.audit-logs.excel');
     });
 
     Route::middleware(['permission:beneficiaries.view|beneficiaries.manage'])->group(function () {

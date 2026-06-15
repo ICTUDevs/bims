@@ -12,6 +12,7 @@ import { useAuthorization } from '@/composables/useAuthorization';
 import { useResponsiveDrawerWidth } from '@/composables/useResponsiveDrawerWidth';
 import { useFlashMessages } from '@/composables/useFlashMessages';
 import axios from 'axios';
+import dayjs from 'dayjs';
 
 useFlashMessages();
 
@@ -76,10 +77,37 @@ const form = useForm({
     training_type: '',
     facilitator: '',
     venue: '',
-    date_conducted: '',
-    duration_hours: '' as any,
-    project_id: '' as string | null,
+    date_conducted: '' as string,
+    duration_hours: null as number | null,
+    project_id: null as string | null,
 });
+
+const normalizeDateValue = (value: unknown): string => {
+    if (value == null || value === '') return '';
+    if (typeof value === 'string') return value;
+    if (dayjs.isDayjs(value)) return value.format('YYYY-MM-DD');
+    if (typeof value === 'object' && value !== null && 'format' in value && typeof (value as { format: (f: string) => string }).format === 'function') {
+        return (value as { format: (f: string) => string }).format('YYYY-MM-DD');
+    }
+    return String(value);
+};
+
+form.transform((data) => ({
+    ...data,
+    training_type: data.training_type || '',
+    date_conducted: normalizeDateValue(data.date_conducted),
+    project_id: data.project_id || null,
+    duration_hours: data.duration_hours === '' || data.duration_hours == null ? null : data.duration_hours,
+}));
+
+const showFormErrors = (errors: Record<string, string | string[]>) => {
+    const first = Object.values(errors ?? {})[0];
+    if (first) {
+        message.error(Array.isArray(first) ? first[0] : first);
+        return;
+    }
+    message.error('Session expired or request failed. Refresh the page and try again.');
+};
 
 const columns = [
     { title: 'Title', dataIndex: 'training_title', key: 'training_title' },
@@ -142,17 +170,16 @@ const openEdit = (record: Training) => {
     form.facilitator = record.facilitator ?? '';
     form.venue = record.venue ?? '';
     form.date_conducted = record.date_conducted ? record.date_conducted.substring(0, 10) : '';
-    form.duration_hours = record.duration_hours ?? '';
+    form.duration_hours = record.duration_hours ?? null;
     form.project_id = record.project_id ?? null;
     showModal.value = true;
 };
 
 const handleSubmit = () => {
-    form.transform((data) => ({
-        ...data,
-        project_id: data.project_id || null,
-        duration_hours: data.duration_hours === '' ? null : data.duration_hours,
-    }));
+    if (!normalizeDateValue(form.date_conducted)) {
+        message.error('Date conducted is required.');
+        return Promise.reject();
+    }
 
     const options = {
         onSuccess: () => {
@@ -161,16 +188,14 @@ const handleSubmit = () => {
                 form.reset();
             }
         },
-        onError: () => {
-            message.error('Could not save training. Please check the form for errors.');
-        },
+        onError: (errors: Record<string, string | string[]>) => showFormErrors(errors),
     };
 
     if (editing.value) {
-        form.put(route('trainings.update', editing.value.id), options);
-    } else {
-        form.post(route('trainings.store'), options);
+        return form.put(route('trainings.update', editing.value.id), options);
     }
+
+    return form.post(route('trainings.store'), options);
 };
 
 const handleDelete = (record: Training) => {
@@ -325,6 +350,7 @@ const completionColors: Record<string, string> = { Completed: 'green', Incomplet
                     </a-form-item>
                     <a-form-item label="Training Type">
                         <a-input v-model:value="form.training_type" />
+                        <div class="text-red-500 text-xs" v-if="form.errors.training_type">{{ form.errors.training_type }}</div>
                     </a-form-item>
                     <a-form-item label="Facilitator">
                         <a-input v-model:value="form.facilitator" />
@@ -350,6 +376,7 @@ const completionColors: Record<string, string> = { Completed: 'green', Incomplet
                         <a-select v-model:value="form.project_id" placeholder="Select project" allow-clear>
                             <a-select-option v-for="p in projects" :key="p.id" :value="p.id">{{ p.project_name }}</a-select-option>
                         </a-select>
+                        <div class="text-red-500 text-xs" v-if="form.errors.project_id">{{ form.errors.project_id }}</div>
                     </a-form-item>
                 </div>
             </a-form>

@@ -16,7 +16,9 @@ import {
     DashboardOutlined,
     DollarOutlined,
     DownOutlined,
+    FileTextOutlined,
     KeyOutlined,
+    LineChartOutlined,
     LogoutOutlined,
     ProfileOutlined,
     ProjectOutlined,
@@ -75,13 +77,15 @@ const themeAlgorithm = computed(() => {
 });
 
 const showSystemMenu = computed(
-    () => can('audit_logs.view') || can('users.manage') || can('roles.manage'),
+    () => can('reports.export') || can('audit_logs.view') || can('users.manage') || can('roles.manage'),
 );
 
 const systemMenuActive = computed(
     () =>
         Boolean(
-            route().current('audit-logs.*')
+            route().current('monitoring.*')
+            || route().current('reports.*')
+            || route().current('audit-logs.*')
             || route().current('users.*')
             || route().current('roles.*'),
         ),
@@ -182,6 +186,24 @@ const navTriggerInactiveClass = `${navTriggerBase} border-transparent text-gray-
                                             </button>
                                         </template>
                                         <template #content>
+                                            <DropdownLink
+                                                v-if="can('dashboard.access')"
+                                                :href="route('monitoring.index')"
+                                            >
+                                                <span class="inline-flex items-center gap-1.5">
+                                                    <LineChartOutlined class="text-sm opacity-90" />
+                                                    Monitoring
+                                                </span>
+                                            </DropdownLink>
+                                            <DropdownLink
+                                                v-if="can('reports.export')"
+                                                :href="route('reports.index')"
+                                            >
+                                                <span class="inline-flex items-center gap-1.5">
+                                                    <FileTextOutlined class="text-sm opacity-90" />
+                                                    Reports
+                                                </span>
+                                            </DropdownLink>
                                             <DropdownLink
                                                 v-if="can('audit_logs.view')"
                                                 :href="route('audit-logs.index')"
@@ -455,6 +477,26 @@ const navTriggerInactiveClass = `${navTriggerBase} border-transparent text-gray-
                                         System
                                     </p>
                                 </div>
+                                <ResponsiveNavLink
+                                    v-if="can('dashboard.access')"
+                                    :href="route('monitoring.index')"
+                                    :active="route().current('monitoring.*')"
+                                >
+                                    <span class="inline-flex items-center gap-2">
+                                        <LineChartOutlined class="text-base opacity-90" />
+                                        Monitoring
+                                    </span>
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    v-if="can('reports.export')"
+                                    :href="route('reports.index')"
+                                    :active="route().current('reports.*')"
+                                >
+                                    <span class="inline-flex items-center gap-2">
+                                        <FileTextOutlined class="text-base opacity-90" />
+                                        Reports
+                                    </span>
+                                </ResponsiveNavLink>
                                 <ResponsiveNavLink
                                     v-if="can('audit_logs.view')"
                                     :href="route('audit-logs.index')"

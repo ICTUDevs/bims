@@ -7,6 +7,8 @@ use App\Models\Project;
 use App\Models\Training;
 use App\Support\AuditLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 
 class TrainingController extends Controller
 {
@@ -148,6 +150,17 @@ class TrainingController extends Controller
             $request->merge(['training_title' => $request->input('training_tile')]);
         }
 
+        $dateConducted = $request->input('date_conducted');
+        if ($dateConducted !== null && $dateConducted !== '') {
+            try {
+                $dateConducted = Carbon::parse($dateConducted)->format('Y-m-d');
+            } catch (\Throwable) {
+                $dateConducted = null;
+            }
+        } else {
+            $dateConducted = null;
+        }
+
         $request->merge([
             'project_id' => $request->input('project_id') ?: null,
             'duration_hours' => $request->input('duration_hours') === '' || $request->input('duration_hours') === null
@@ -156,6 +169,7 @@ class TrainingController extends Controller
             'facilitator' => $request->input('facilitator') ?: null,
             'venue' => $request->input('venue') ?: null,
             'training_type' => $request->input('training_type') ?: '',
+            'date_conducted' => $dateConducted,
         ]);
 
         return $request->validate([
@@ -165,7 +179,7 @@ class TrainingController extends Controller
             'venue' => 'nullable|string|max:200',
             'date_conducted' => 'required|date',
             'duration_hours' => 'nullable|numeric|min:0',
-            'project_id' => 'nullable|exists:projects,id',
+            'project_id' => ['nullable', 'uuid', Rule::exists('projects', 'id')],
         ]);
     }
 }
